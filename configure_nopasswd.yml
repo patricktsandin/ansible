@@ -1,0 +1,45 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Add nopasswd option to admin groups in the sudoers file.
+# Tested on Fedora 34 and Ubuntu 20.04
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  tasks:
+
+    - name: 'wheel group can sudo without password'
+      lineinfile:
+        path: '/etc/sudoers'
+        regexp: '^%wheel'
+        line: '%wheel  ALL=(ALL)       NOPASSWD: ALL'
+        state: present
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+      tags:
+        - 'sudoers'
+        - 'wheel'
+
+    - name: 'sudo group can sudo without password'
+      lineinfile:
+        path: '/etc/sudoers'
+        regexp: '^%sudo'
+        line: '%sudo	ALL=(ALL:ALL) NOPASSWD: ALL'
+        state: 'present'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+      tags:
+        - 'sudoers'
+        - 'sudo'
+
+    - name: 'admin group can sudo without password'
+      lineinfile:
+        path: '/etc/sudoers'
+        regexp: '^%admin'
+        line: '%admin ALL=(ALL) NOPASSWD: ALL'
+        state: 'present'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+      tags:
+        - 'sudoers'
+        - 'admin'

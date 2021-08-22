@@ -1,0 +1,63 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Install commonly used development packages.  Attempts to use
+# metapackages and package groups wherever possible.
+# Tested on Fedora 34 and Ubuntu 20.04
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  vars:
+    redhat_packages:
+      - 'curl'
+      - 'vim'
+      - 'telnet'
+      - '@python-classroom'
+      - '@development-tools'
+      - '@development-libs'
+      - '@c-development'
+    ubuntu_packages:
+      - 'curl'
+      - 'vim'
+      - 'telnet'
+      - 'build-essential'
+      - 'ubuntu-dev-tools'
+      - 'python-all-dev'
+      - 'python3-all-dev'
+      - 'python3-pip'
+      - 'virtualenv'
+      - 'libffi-dev'
+      - 'libsasl2-dev'
+      - 'python-dev'
+      - 'libldap2-dev'
+      - 'libssl-dev'
+  tasks:
+
+    - name: 'Common dev packages installed on RedHat-family OS'
+      package:
+        name: '{{ redhat_packages }}'
+        state: 'latest'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+
+    - name: 'Common dev packages installed on Debian-family OS'
+      package:
+        name: '{{ ubuntu_packages }}'
+        state: 'latest'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+
+    - name: 'PIP2 installer downloaded'
+      get_url:
+        url: 'https://bootstrap.pypa.io/pip/2.7/get-pip.py'
+        dest: '/tmp/get-pip.py'
+        mode: '+x'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+
+    - name: 'PIP2 installed'
+      command: 'python2 /tmp/get-pip.py'
+      args:
+        creates: '/usr/local/bin/pip2'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'

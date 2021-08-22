@@ -1,0 +1,127 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Install postgresql and pgadmin4.
+# Tested on Fedora 34 and Ubuntu 20.04
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  vars:
+    gpg_key: 'https://www.pgadmin.org/static/packages_pgadmin_org.pub'
+  handlers:
+    - name: 'postgresql_restart'
+      service:
+        name: 'postgresql'
+        state: 'restarted'
+    - name: 'pgadmin4_setup_nudge'
+      debug:
+        msg: 'Now run sudo /usr/pgadmin4/bin/setup-web.sh --yes'
+  tasks:
+
+
+    - name: 'postgresql installed on Fedora'
+      block:
+        - name: 'pgadmin4 repo installed'
+          yum_repository:
+            name: 'pgadmin4'
+            description: 'pgadmin4'
+            baseurl: 'https://ftp.postgresql.org/pub/pgadmin/pgadmin4/yum/fedora/fedora-$releasever-$basearch'
+            gpgkey: '{{ gpg_key }}'
+            gpgcheck: 'yes'
+            state: 'present'
+            enabled: 'yes'
+
+        - name: 'postgresql and pgadmin4 are installed'
+          yum:
+            name: 
+              - 'postgresql-server'
+              - 'pgadmin4'
+            state: 'present'
+          notify: 'pgadmin4_setup_nudge'
+
+        - name: 'postgresql is initialized'
+          command: 'postgresql-setup --initdb --unit postgresql'
+          args:
+            creates: '/var/lib/pgsql/data/base'
+
+        - name: 'Password auth enabled for postgresql on IPv4 loopback'
+          lineinfile:
+            path: '/var/lib/pgsql/data/pg_hba.conf'
+            regexp: '^\s*host\s+all\s+all\s+127\.0\.0\.1/32\s+'
+            line: 'host    all             all             127.0.0.1/32            md5'
+            insertafter: '^host\s+'
+            state: 'present'
+          notify: 'postgresql_restart'
+
+        - name: 'Password auth enabled for postgresql on IPv6 loopback'
+          lineinfile:
+            path: '/var/lib/pgsql/data/pg_hba.conf'
+            regexp: '^\s*host\s+all\s+all\s+::1/128\s+'
+            line: 'host    all             all             ::1/128                 md5'
+            insertafter: '^host\s+'
+            state: 'present'
+          notify: 'postgresql_restart'
+
+        - name: 'httpd is enabled and started'
+          service:
+            name: 'httpd'
+            enabled: 'yes'
+            state: 'started'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+
+
+    - name: 'postgresql installed on Debian-family OS'
+      block:
+        - name: 'pgadmin4 repo key installed'
+          apt_key:
+            url: '{{ gpg_key }}'
+            state: 'present'
+
+        - name: 'pgadmin4 repo installed'
+          apt_repository:
+            filename: 'pgadmin4'
+            repo: 'deb https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main'
+            state: 'present'
+
+        - name: 'postgresql and pgadmin4 installed'
+          apt:
+            name: 
+              - 'postgresql'
+              - 'apache2'
+              - 'pgadmin4'
+            state: 'present'
+          notify: 'pgadmin4_setup_nudge'
+
+        - name: 'Password auth enabled for postgresql on IPv4 loopback'
+          lineinfile:
+            path: '/etc/postgresql/12/main/pg_hba.conf'
+            regexp: '^\s*host\s+all\s+all\s+127\.0\.0\.1/32\s+'
+            line: 'host    all             all             127.0.0.1/32            md5'
+            insertafter: '^host\s+'
+            state: 'present'
+          notify: 'postgresql_restart'
+
+        - name: 'Password auth enabled for postgresql on IPv6 loopback'
+          lineinfile:
+            path: '/etc/postgresql/12/main/pg_hba.conf'
+            regexp: '^\s*host\s+all\s+all\s+::1/128\s+'
+            line: 'host    all             all             ::1/128                 md5'
+            insertafter: '^host\s+'
+            state: 'present'
+          notify: 'postgresql_restart'
+
+        - name: 'apache2 is enabled and started'
+          service:
+            name: 'apache2'
+            enabled: 'yes'
+            state: 'started'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+
+
+    - name: 'postgresql is enabled and started'
+      service:
+        name: 'postgresql'
+        enabled: 'yes'
+        state: 'started'

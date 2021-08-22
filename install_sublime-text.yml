@@ -1,0 +1,46 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Installs Sublime Text
+# Tested on Fedora 34 and Ubuntu 20.04
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  tasks:
+
+
+    - name: 'Sublime Text repo installed on RedHat-family OS'
+      block:
+        - name: 'sublime-text repo installed'
+          yum_repository:
+            name: 'sublime-text'
+            description: 'Sublime Text - Stable'
+            baseurl: 'https://download.sublimetext.com/rpm/stable/$basearch'
+            gpgkey: 'https://download.sublimetext.com/sublimehq-rpm-pub.gpg'
+            gpgcheck: 'yes'
+            state: 'present'
+            enabled: 'yes'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+
+
+    - name: 'Sublime Text repo installed on Debian-family OS'
+      block:
+        - name: 'sublime-text repo key installed'
+          apt_key:
+            url: 'https://download.sublimetext.com/sublimehq-pub.gpg'
+            state: 'present'
+
+        - name: 'sublime-text repo installed'
+          apt_repository:
+            filename: 'sublime-text'
+            repo: 'deb https://download.sublimetext.com/ apt/stable/'
+            state: 'present'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+
+
+    - name: 'sublime-text installed'
+      package:
+        name: 'sublime-text'
+        state: 'latest'

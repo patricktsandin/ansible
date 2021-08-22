@@ -1,0 +1,35 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Installs Pycharm Professional
+# Tested on Fedora 34 and Ubuntu 20.04
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  tasks:
+
+    - name: 'Pycharm installed on RedHat-family OS'
+      block:
+        - name: 'Flathub is enabled'
+          flatpak_remote:
+            name: 'flathub'
+            flatpakrepo_url: 'https://dl.flathub.org/repo/flathub.flatpakrepo'
+            method: 'system'
+            state: 'present'
+
+        - name: 'pycharm-professional installed'
+          flatpak:
+            name: 'com.jetbrains.PyCharm-Professional'
+            state: 'present'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+
+
+    - name: 'Pycharm installed on Debian-family OS'
+      block:
+        - name: 'pycharm-professional installed'
+          snap:
+            name: 'pycharm-professional'
+            classic: 'yes'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'

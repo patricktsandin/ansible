@@ -1,0 +1,51 @@
+# Patrick Sandin
+# Aug 15th 2021
+# Install Google Chrome.
+# Tested on Fedora 34 and Ubuntu 20.04 LTS
+
+---
+- hosts: 'localhost'
+  become: 'yes'
+  vars:
+    friendly_name: 'Google Chrome'
+    repo_name: 'google-chrome'
+    package_name: 'google-chrome-stable'
+    gpg_key: 'https://dl.google.com/linux/linux_signing_key.pub'
+  tasks:
+
+
+    - name: '{{ friendly_name }} repo installed on RedHat-family OS'
+      block:
+        - name: '{{ repo_name }} repo installed'
+          yum_repository:
+            name: '{{ repo_name }}'
+            description: '{{ repo_name }}'
+            baseurl: 'http://dl.google.com/linux/chrome/rpm/stable/$basearch'
+            gpgkey: '{{ gpg_key }}'
+            gpgcheck: 'yes'
+            state: 'present'
+            enabled: 'yes'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'RedHat'
+
+
+    - name: '{{ friendly_name }} repo installed on Debian-family OS'
+      block:
+        - name: '{{ repo_name }} repo key installed'
+          apt_key:
+            url: '{{ gpg_key }}'
+            state: 'present'
+
+        - name: '{{ repo_name }} repo installed'
+          apt_repository:
+            filename: '{{ repo_name }}'
+            repo: 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main'
+            state: 'present'
+      when:
+        - ansible_facts['distribution_file_variety'] == 'Debian'
+
+
+    - name: '{{ package_name }} installed'
+      package:
+        name: '{{ package_name }}'
+        state: 'latest'
