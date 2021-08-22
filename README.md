@@ -1,0 +1,1 @@
+This is a repo to hold simple Ansible playbooks to automate the provisioning of development environments.  I find myself creating Ubuntu and Fedora virtual machines fairly often during development, so this helps me set them up.
